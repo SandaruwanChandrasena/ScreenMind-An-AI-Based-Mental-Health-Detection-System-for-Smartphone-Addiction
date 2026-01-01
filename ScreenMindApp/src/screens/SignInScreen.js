@@ -1,4 +1,6 @@
 import React, { useContext, useState } from 'react';
+import Icon from 'react-native-vector-icons/Ionicons';
+
 import {
   View,
   Text,
@@ -16,6 +18,7 @@ import { ThemeContext } from '../context/ThemeContext';
 import GlassCard from '../components/GlassCard';
 
 export default function SignInScreen({ navigation }) {
+  const [showPassword, setShowPassword] = useState(false);
   const { signIn } = useContext(AuthContext);
   const { theme } = useContext(ThemeContext);
   const { colors } = theme;
@@ -65,14 +68,24 @@ export default function SignInScreen({ navigation }) {
           />
 
           <Text style={[styles.label, { color: colors.textSecondary }]}>Password</Text>
-          <TextInput
-            style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
-            placeholder="••••••••"
-            placeholderTextColor={colors.textSecondary}
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
+          <View style={[styles.passwordContainer, { borderColor: colors.border }]}>
+  <TextInput
+    style={[styles.passwordInput, { color: colors.textPrimary }]}
+    placeholder="••••••••"
+    placeholderTextColor={colors.textSecondary}
+    secureTextEntry={!showPassword}
+    value={password}
+    onChangeText={setPassword}
+  />
+  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+    <Icon
+      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+      size={20}
+      color={colors.textSecondary}
+    />
+  </TouchableOpacity>
+</View>
+
 
           <TouchableOpacity
             style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
@@ -117,4 +130,18 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: '#fff', fontWeight: '900', fontSize: 16 },
 
   link: { textAlign: 'center', fontWeight: '600' },
+
+  passwordContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  borderWidth: 1,
+  borderRadius: 14,
+  paddingHorizontal: 14,
+  backgroundColor: 'rgba(255,255,255,0.06)',
+},
+passwordInput: {
+  flex: 1,
+  paddingVertical: 12,
+},
+
 });
