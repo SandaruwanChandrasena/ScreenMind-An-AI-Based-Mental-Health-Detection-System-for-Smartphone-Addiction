@@ -1,62 +1,144 @@
-import React, { useContext } from 'react';
-import { Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { AuthContext } from '../context/AuthContext';
-import { ThemeContext } from '../context/ThemeContext';
-import GlassCard from '../components/GlassCard';
+import React, { useContext } from "react";
+import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+
+import ScreenBackground from "../components/ScreenBackground";
+import FeatureCard from "../components/FeatureCard";
+import PrimaryButton from "../components/PrimaryButton";
+import { colors } from "../theme/colors";
+import { spacing } from "../theme/spacing";
+import { AuthContext } from "../context/AuthContext";
 
 export default function DashboardScreen() {
   const { user, signOut } = useContext(AuthContext);
-  const { theme } = useContext(ThemeContext);
-  const { colors } = theme;
+
+  const onLogout = async () => {
+    try {
+      await signOut();
+    } catch (e) {
+      console.log("Logout error:", e);
+    }
+  };
+
+  // Dummy scores for now (later we’ll replace with real ML outputs)
+  const overallRisk = "Moderate";
+  const overallHint = "Late-night usage increased this week.";
 
   return (
-    <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={styles.container}>
-      <Text style={[styles.header, { color: colors.textPrimary }]}>ScreenMind Dashboard</Text>
-      <Text style={[styles.welcome, { color: colors.textSecondary }]}>
-        Hi, {user?.displayName || 'User'} 👋
-      </Text>
+    <ScreenBackground>
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.brand}>SCREENMIND</Text>
 
-      <GlassCard><Text style={[styles.cardTitle, { color: colors.textPrimary }]}>📱 Screen Usage</Text>
-        <Text style={{ color: colors.textSecondary }}>Usage & addiction risk</Text>
-      </GlassCard>
+        <Text style={styles.title}>Welcome, {user?.displayName || "User"} 👋</Text>
+        <Text style={styles.sub}>Your calm dashboard for healthier screen habits.</Text>
 
-      <GlassCard><Text style={[styles.cardTitle, { color: colors.textPrimary }]}>😴 Sleep</Text>
-        <Text style={{ color: colors.textSecondary }}>Sleep disruption analysis</Text>
-      </GlassCard>
+        {/* Top Summary Card */}
+        <View style={styles.summaryCard}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.summaryTitle}>Overall Risk</Text>
+            <Text style={styles.summaryValue}>{overallRisk}</Text>
+            <Text style={styles.summaryHint} numberOfLines={2}>
+              {overallHint}
+            </Text>
+          </View>
 
-      <GlassCard><Text style={[styles.cardTitle, { color: colors.textPrimary }]}>💬 Social Media</Text>
-        <Text style={{ color: colors.textSecondary }}>Interaction risk patterns</Text>
-      </GlassCard>
+          <View style={styles.pill}>
+            <Text style={styles.pillText}>Today</Text>
+          </View>
+        </View>
 
-      <GlassCard><Text style={[styles.cardTitle, { color: colors.textPrimary }]}>📍 Isolation</Text>
-        <Text style={{ color: colors.textSecondary }}>Mobility & loneliness risk</Text>
-      </GlassCard>
+        {/* Feature Grid */}
+        <View style={styles.grid}>
+          <FeatureCard
+            emoji="📱"
+            title="Screen Usage"
+            subtitle="Analyze screen time & addiction risk patterns"
+            tint="rgba(124,58,237,0.25)"
+            onPress={() => {}}
+          />
+          <FeatureCard
+            emoji="😴"
+            title="Sleep"
+            subtitle="Estimate sleep disruption risk using phone activity"
+            tint="rgba(34,197,94,0.22)"
+            onPress={() => {}}
+          />
+        </View>
 
-      <TouchableOpacity
-        onPress={signOut}
-        style={[
-          styles.logoutBtn,
-          { backgroundColor: colors.accent, borderColor: colors.border }
-        ]}
-      >
-        <Text style={styles.logoutText}>Log Out</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <View style={styles.grid}>
+          <FeatureCard
+            emoji="💬"
+            title="Social Media"
+            subtitle="Detect risky interaction and engagement patterns"
+            tint="rgba(59,130,246,0.22)"
+            onPress={() => {}}
+          />
+          <FeatureCard
+            emoji="📍"
+            title="Isolation"
+            subtitle="Mobility & communication-based loneliness risk"
+            tint="rgba(239,68,68,0.18)"
+            onPress={() => {}}
+          />
+        </View>
+
+        {/* Actions */}
+        <View style={{ height: spacing.lg }} />
+
+        <PrimaryButton title="Log Out" onPress={onLogout} style={styles.logoutBtn} />
+
+        <Pressable onPress={() => {}} style={({ pressed }) => [styles.footerLink, pressed && { opacity: 0.85 }]}>
+          <Text style={styles.footerText}>Privacy & Data Settings</Text>
+        </Pressable>
+      </ScrollView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20 },
-  header: { fontSize: 26, fontWeight: '800' },
-  welcome: { marginBottom: 18 },
-  cardTitle: { fontSize: 18, fontWeight: '700' },
+  container: { padding: spacing.lg, paddingTop: spacing.xxl, flexGrow: 1 },
+
+  brand: {
+    color: colors.muted,
+    fontWeight: "900",
+    letterSpacing: 2.5,
+    marginBottom: spacing.sm,
+  },
+
+  title: { color: colors.text, fontSize: 26, fontWeight: "900" },
+  sub: { color: colors.muted, marginTop: spacing.xs, marginBottom: spacing.lg, lineHeight: 18 },
+
+  summaryCard: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 22,
+    padding: spacing.lg,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    marginBottom: spacing.lg,
+  },
+
+  summaryTitle: { color: colors.muted, fontSize: 13, fontWeight: "800" },
+  summaryValue: { color: colors.text, fontSize: 24, fontWeight: "900", marginTop: 6 },
+  summaryHint: { color: colors.faint, fontSize: 12, marginTop: 6, lineHeight: 16 },
+
+  pill: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "rgba(124,58,237,0.22)",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  pillText: { color: colors.text, fontWeight: "900", fontSize: 12 },
+
+  grid: { flexDirection: "row", gap: spacing.md, marginBottom: spacing.md },
 
   logoutBtn: {
-    marginTop: 18,
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-    borderWidth: 1,
+    backgroundColor: colors.primary,
   },
-  logoutText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+
+  footerLink: { marginTop: spacing.md, alignItems: "center" },
+  footerText: { color: colors.faint, fontWeight: "700" },
 });

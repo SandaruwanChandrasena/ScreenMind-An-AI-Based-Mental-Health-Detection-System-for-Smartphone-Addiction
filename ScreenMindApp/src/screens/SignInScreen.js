@@ -1,147 +1,175 @@
-import React, { useContext, useState } from 'react';
-import Icon from 'react-native-vector-icons/Ionicons';
-
+import React, { useContext, useRef, useState } from "react";
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
+  Pressable,
+  SafeAreaView,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-} from 'react-native';
+  TouchableWithoutFeedback,
+  Keyboard,
+} from "react-native";
 
-import { AuthContext } from '../context/AuthContext';
-import { ThemeContext } from '../context/ThemeContext';
-import GlassCard from '../components/GlassCard';
+import { colors } from "../theme/colors";
+import { spacing } from "../theme/spacing";
+import TextField from "../components/TextField";
+import PrimaryButton from "../components/PrimaryButton";
+import { AuthContext } from "../context/AuthContext";
 
 export default function SignInScreen({ navigation }) {
-  const [showPassword, setShowPassword] = useState(false);
   const { signIn } = useContext(AuthContext);
-  const { theme } = useContext(ThemeContext);
-  const { colors } = theme;
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const passRef = useRef(null);
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async () => {
     if (!email.trim() || !password) {
-      Alert.alert('Missing info', 'Please enter email and password.');
+      Alert.alert("Missing info", "Please enter email and password.");
       return;
     }
 
     try {
       setLoading(true);
       await signIn({ email: email.trim(), password });
-      // Redirect handled by auth listener
-    } catch (err) {
-      Alert.alert('Sign In failed', err?.message ?? 'Something went wrong');
+      Keyboard.dismiss();
+    } catch (e) {
+      Alert.alert("Sign In failed", e?.message ?? "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.background }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={[styles.title, { color: colors.textPrimary }]}>Welcome back</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Let’s continue improving your screen habits.
-        </Text>
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.bgGlow1} />
+      <View style={styles.bgGlow2} />
 
-        <GlassCard style={{ marginTop: 18 }}>
-          <Text style={[styles.label, { color: colors.textSecondary }]}>Email</Text>
-          <TextInput
-            style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
-            placeholder="example@email.com"
-            placeholderTextColor={colors.textSecondary}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            value={email}
-            onChangeText={setEmail}
-          />
-
-          <Text style={[styles.label, { color: colors.textSecondary }]}>Password</Text>
-          <View style={[styles.passwordContainer, { borderColor: colors.border }]}>
-  <TextInput
-    style={[styles.passwordInput, { color: colors.textPrimary }]}
-    placeholder="••••••••"
-    placeholderTextColor={colors.textSecondary}
-    secureTextEntry={!showPassword}
-    value={password}
-    onChangeText={setPassword}
-  />
-  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-    <Icon
-      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-      size={20}
-      color={colors.textSecondary}
-    />
-  </TouchableOpacity>
-</View>
-
-
-          <TouchableOpacity
-            style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
-            onPress={onSubmit}
-            disabled={loading}
-            activeOpacity={0.9}
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
+        >
+          <ScrollView
+            contentContainerStyle={styles.container}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.primaryBtnText}>{loading ? 'Signing in...' : 'Sign In'}</Text>
-          </TouchableOpacity>
+            <View style={styles.header}>
+              <Text style={styles.brand}>Welcome back</Text>
+              <Text style={styles.title}>Sign in</Text>
+              <Text style={styles.subtitle}>Continue where you left off.</Text>
+            </View>
 
-          <TouchableOpacity onPress={() => navigation.navigate('SignUp')} style={{ marginTop: 14 }}>
-            <Text style={[styles.link, { color: colors.accent }]}>
-              Don’t have an account? <Text style={{ fontWeight: '800' }}>Sign Up</Text>
-            </Text>
-          </TouchableOpacity>
-        </GlassCard>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <View style={styles.card}>
+              <TextField
+                label="Email"
+                placeholder="you@example.com"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                returnKeyType="next"
+                onSubmitEditing={() => passRef.current?.focus()}
+                blurOnSubmit={false}
+              />
+
+              <View style={{ height: spacing.sm }} />
+
+              <TextField
+                ref={passRef}
+                label="Password"
+                placeholder="••••••••"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                returnKeyType="done"
+                onSubmitEditing={onSubmit}
+                blurOnSubmit={true}
+              />
+
+              <Pressable
+                onPress={() => Alert.alert("Not implemented", "Password reset coming soon.")}
+                style={styles.forgotWrap}
+              >
+                <Text style={styles.forgot}>Forgot password?</Text>
+              </Pressable>
+
+              <View style={{ height: spacing.md }} />
+
+              <PrimaryButton
+                title={loading ? "Signing in..." : "Sign In"}
+                onPress={onSubmit}
+                disabled={loading}
+              />
+            </View>
+
+            <View style={styles.bottomRow}>
+              <Text style={styles.bottomText}>New here?</Text>
+              <Pressable onPress={() => navigation.navigate("SignUp")}>
+                <Text style={styles.bottomLink}> Create account</Text>
+              </Pressable>
+            </View>
+
+            <View style={{ height: spacing.xxl }} />
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, paddingTop: 40, flexGrow: 1 },
-  title: { fontSize: 28, fontWeight: '900', letterSpacing: 0.3 },
-  subtitle: { marginTop: 8, fontSize: 14, lineHeight: 20 },
+  safe: { flex: 1, backgroundColor: colors.bg1 },
+  container: { flexGrow: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
 
-  label: { marginTop: 12, marginBottom: 6, fontSize: 13, fontWeight: '700' },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
+  header: { marginTop: spacing.lg, marginBottom: spacing.xl },
+  brand: { color: colors.muted, fontWeight: "800", letterSpacing: 0.6 },
+  title: { color: colors.text, fontSize: 30, fontWeight: "900", marginTop: 8 },
+  subtitle: { color: colors.muted, marginTop: 8, fontSize: 14, lineHeight: 20 },
+
+  card: {
+    backgroundColor: colors.card,
+    borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    borderRadius: 22,
+    padding: spacing.lg,
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 18,
+    elevation: 6,
   },
 
-  primaryBtn: {
-    marginTop: 18,
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
+  forgotWrap: { marginTop: spacing.sm, alignSelf: "flex-end" },
+  forgot: { color: colors.primary2, fontWeight: "700" },
+
+  bottomRow: { flexDirection: "row", justifyContent: "center", marginTop: spacing.lg },
+  bottomText: { color: colors.muted },
+  bottomLink: { color: colors.primary2, fontWeight: "800" },
+
+  bgGlow1: {
+    position: "absolute",
+    width: 320,
+    height: 320,
+    borderRadius: 999,
+    backgroundColor: "#22C55E",
+    opacity: 0.12,
+    top: -120,
+    left: -120,
   },
-  primaryBtnText: { color: '#fff', fontWeight: '900', fontSize: 16 },
-
-  link: { textAlign: 'center', fontWeight: '600' },
-
-  passwordContainer: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  borderWidth: 1,
-  borderRadius: 14,
-  paddingHorizontal: 14,
-  backgroundColor: 'rgba(255,255,255,0.06)',
-},
-passwordInput: {
-  flex: 1,
-  paddingVertical: 12,
-},
-
+  bgGlow2: {
+    position: "absolute",
+    width: 360,
+    height: 360,
+    borderRadius: 999,
+    backgroundColor: "#7C3AED",
+    opacity: 0.16,
+    bottom: -160,
+    right: -140,
+  },
 });

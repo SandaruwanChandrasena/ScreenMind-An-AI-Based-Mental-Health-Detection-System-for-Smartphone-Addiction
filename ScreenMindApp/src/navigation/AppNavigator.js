@@ -1,26 +1,24 @@
 import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { View, ActivityIndicator, TouchableOpacity } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { View, ActivityIndicator } from 'react-native';
 
 import { AuthContext } from '../context/AuthContext';
-import { ThemeContext } from '../context/ThemeContext';
 
 import SignInScreen from '../screens/SignInScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 
+import { colors } from '../theme/colors';
+
 const Stack = createStackNavigator();
 
 export default function AppNavigator() {
   const { user, initializing } = useContext(AuthContext);
-  const { theme, toggleTheme } = useContext(ThemeContext);
-  const { colors } = theme;
 
   if (initializing) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg1 }}>
         <ActivityIndicator size="large" />
       </View>
     );
@@ -30,26 +28,16 @@ export default function AppNavigator() {
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
-          headerStyle: { backgroundColor: colors.background },
-          headerTintColor: colors.textPrimary,
+          headerStyle: { backgroundColor: colors.bg1 },
+          headerTintColor: colors.text,
+          headerTitleStyle: { fontWeight: '800' },
         }}
       >
         {user ? (
           <Stack.Screen
             name="Dashboard"
             component={DashboardScreen}
-            options={{
-              title: 'Home',
-              headerRight: () => (
-                <TouchableOpacity onPress={toggleTheme} style={{ marginRight: 16 }}>
-                  <Icon
-                    name={theme.mode === 'light' ? 'moon-outline' : 'sunny-outline'}
-                    size={22}
-                    color={colors.textPrimary}
-                  />
-                </TouchableOpacity>
-              ),
-            }}
+            options={{ title: 'Home' }}
           />
         ) : (
           <>
