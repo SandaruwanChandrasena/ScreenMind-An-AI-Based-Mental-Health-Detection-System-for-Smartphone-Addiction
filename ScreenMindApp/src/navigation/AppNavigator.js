@@ -4,6 +4,14 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { View, ActivityIndicator, TouchableOpacity } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 
+
+import IsolationOverviewScreen from "../features/isolation/screens/IsolationOverviewScreen";
+import IsolationWhyScreen from "../features/isolation/screens/IsolationWhyScreen";
+import IsolationInsightsScreen from "../features/isolation/screens/IsolationInsightsScreen";
+import IsolationTrendsScreen from "../features/isolation/screens/IsolationTrendsScreen";
+import IsolationSuggestionsScreen from "../features/isolation/screens/IsolationSuggestionsScreen";
+
+
 import { AuthContext } from "../context/AuthContext";
 
 import SignInScreen from "../screens/SignInScreen";
@@ -48,24 +56,34 @@ export default function AppNavigator() {
             <Stack.Screen
               name="Dashboard"
               component={DashboardScreen}
-              options={({ navigation }) => ({
-                title: "Home",
-                headerRight: () => (
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate("Profile")}
-                    style={{ marginRight: 16 }}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <Icon name="person-circle-outline" size={28} color={colors.text} />
-                  </TouchableOpacity>
-                ),
-              })}
+              options={{ title: "Home" }}
             />
 
+            {/* ✅ Isolation Module Screens */}
             <Stack.Screen
-              name="Profile"
-              component={ProfileScreen}
-              options={{ title: "Profile" }}
+              name="IsolationOverview"
+              component={IsolationOverviewScreen}
+              options={{ title: "Isolation" }}
+            />
+            <Stack.Screen
+              name="IsolationWhy"
+              component={IsolationWhyScreen}
+              options={{ title: "Why this risk?" }}
+            />
+            <Stack.Screen
+              name="IsolationInsights"
+              component={IsolationInsightsScreen}
+              options={{ title: "Insights" }}
+            />
+            <Stack.Screen
+              name="IsolationTrends"
+              component={IsolationTrendsScreen}
+              options={{ title: "Trends" }}
+            />
+            <Stack.Screen
+              name="IsolationSuggestions"
+              component={IsolationSuggestionsScreen}
+              options={{ title: "Suggestions" }}
             />
           </>
         ) : (
