@@ -9,7 +9,7 @@ import DashboardBackground from "../components/DashboardBackground";
 import FeatureCard from "../components/FeatureCard";
 
 
-export default function DashboardScreen() {
+export default function DashboardScreen({ navigation }) {
   const { user } = useContext(AuthContext);
 
   // Dummy summary (later replace with your ML predictions)
@@ -54,7 +54,7 @@ export default function DashboardScreen() {
             title="Sleep"
             subtitle="Sleep disruption analysis"
             tint="rgba(34,197,94,0.22)"
-            onPress={() => {}}
+            onPress={() => navigation.navigate("SleepHome")}
           />
         </View>
 

@@ -6,6 +6,14 @@ import Icon from "react-native-vector-icons/Ionicons";
 
 import { AuthContext } from "../context/AuthContext";
 
+import SleepHomeScreen from "../features/sleep/screens/SleepHomeScreen";
+import MorningCheckInScreen from "../features/sleep/screens/MorningCheckInScreen";
+import SleepDetailsScreen from "../features/sleep/screens/SleepDetailsScreen";
+import DataPermissionsScreen from "../features/sleep/screens/DataPermissionsScreen";
+import SnoringScreen from "../features/sleep/screens/SnoringScreen";
+
+
+
 import SignInScreen from "../screens/SignInScreen";
 import SignUpScreen from "../screens/SignUpScreen";
 import DashboardScreen from "../screens/DashboardScreen";
@@ -48,24 +56,37 @@ export default function AppNavigator() {
             <Stack.Screen
               name="Dashboard"
               component={DashboardScreen}
-              options={({ navigation }) => ({
-                title: "Home",
-                headerRight: () => (
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate("Profile")}
-                    style={{ marginRight: 16 }}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <Icon name="person-circle-outline" size={28} color={colors.text} />
-                  </TouchableOpacity>
-                ),
-              })}
+              options={{ title: "Home" }}
             />
 
             <Stack.Screen
-              name="Profile"
-              component={ProfileScreen}
-              options={{ title: "Profile" }}
+              name="SleepHome"
+              component={SleepHomeScreen}
+              options={{ title: "Sleep" }}
+            />
+
+            <Stack.Screen
+              name="SleepCheckIn"
+              component={MorningCheckInScreen}
+              options={{ title: "Morning Check-In" }}
+            />
+
+            <Stack.Screen
+              name="SleepDetails"
+              component={SleepDetailsScreen}
+              options={{ title: "Sleep Details" }}
+            />
+
+            <Stack.Screen
+              name="SleepPermissions"
+              component={DataPermissionsScreen}
+              options={{ title: "Data & Permissions" }}
+            />
+
+            <Stack.Screen
+              name="SleepSnoring"
+              component={SnoringScreen}
+              options={{ title: "Snoring" }}
             />
           </>
         ) : (
