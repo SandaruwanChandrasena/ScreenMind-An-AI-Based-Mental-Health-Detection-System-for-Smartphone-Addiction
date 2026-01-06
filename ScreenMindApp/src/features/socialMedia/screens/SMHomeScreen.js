@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import DashboardBackground from "../../../components/DashboardBackground";
 
@@ -14,6 +14,23 @@ import { SM_ROUTES, RISK_LEVELS } from "../utils/sm.constants";
 import { formatMinutes, toFixedMaybe } from "../utils/sm.formatters";
 
 export default function SMHomeScreen({ navigation }) {
+  const [loadingKey, setLoadingKey] = useState(null);
+
+  // ✅ Clear loading when leaving this screen
+  useEffect(() => {
+    const unsub = navigation.addListener("blur", () => setLoadingKey(null));
+    return unsub;
+  }, [navigation]);
+
+  const go = (key, route) => {
+  setLoadingKey(key);
+
+  setTimeout(() => {
+    navigation.navigate(route);
+  }, 280); // 👈 smooth, premium delay
+};
+
+
   const riskLevel = RISK_LEVELS.MODERATE;
 
   const metrics = [
@@ -45,25 +62,16 @@ export default function SMHomeScreen({ navigation }) {
 
   return (
     <DashboardBackground>
-      <ScrollView
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <Text style={styles.brand}>SOCIAL MEDIA</Text>
         <Text style={styles.title}>Mental State Analyzer</Text>
         <Text style={styles.sub}>
           This module summarizes emotional exposure, social withdrawal, and interaction signals.
         </Text>
 
-        <SMRiskBadge
-          level={riskLevel}
-          hint="Mood signal and response patterns show moderate risk today."
-        />
+        <SMRiskBadge level={riskLevel} hint="Mood signal and response patterns show moderate risk today." />
 
-        <SMSectionTitle
-          title="Quick Metrics"
-          subtitle="A compact snapshot of today’s signals."
-        />
+        <SMSectionTitle title="Quick Metrics" subtitle="A compact snapshot of today’s signals." />
         <SMMetricsGrid metrics={metrics} />
 
         <SMSectionTitle title="Actions" subtitle="Explore each analysis pillar." />
@@ -72,43 +80,49 @@ export default function SMHomeScreen({ navigation }) {
           <SMActionCard
             title="Daily Journal"
             emoji="📝"
-            glow="rgba(124,58,237,0.75)"
-            onPress={() => navigation.navigate(SM_ROUTES.Journal)}
+            glow="rgba(123,77,255,0.55)"
+            loading={loadingKey === "journal"}
+            onPress={() => go("journal", SM_ROUTES.Journal)}
           />
 
           <SMActionCard
             title="Notification Analysis"
             emoji="🔔"
-            glow="rgba(14,165,233,0.75)"
-            onPress={() => navigation.navigate(SM_ROUTES.Notification)}
+            glow="rgba(0,224,255,0.50)"
+            loading={loadingKey === "notif"}
+            onPress={() => go("notif", SM_ROUTES.Notification)}
           />
 
           <SMActionCard
             title="Ghosting Detector"
             emoji="⏱️"
-            glow="rgba(34,197,94,0.75)"
-            onPress={() => navigation.navigate(SM_ROUTES.Ghosting)}
+            glow="rgba(0,221,187,0.50)"
+            loading={loadingKey === "ghost"}
+            onPress={() => go("ghost", SM_ROUTES.Ghosting)}
           />
 
           <SMActionCard
             title="Insights"
             emoji="🧠"
-            glow="rgba(124,58,237,0.65)"
-            onPress={() => navigation.navigate(SM_ROUTES.Insights)}
+            glow="rgba(217,70,239,0.55)"
+            loading={loadingKey === "insights"}
+            onPress={() => go("insights", SM_ROUTES.Insights)}
           />
 
           <SMActionCard
             title="History"
             emoji="📊"
-            glow="rgba(34,197,94,0.65)"
-            onPress={() => navigation.navigate(SM_ROUTES.History)}
+            glow="rgba(59,130,246,0.55)"
+            loading={loadingKey === "history"}
+            onPress={() => go("history", SM_ROUTES.History)}
           />
 
           <SMActionCard
             title="Privacy & Ethics"
             emoji="🔒"
-            glow="rgba(255,255,255,0.35)"
-            onPress={() => navigation.navigate(SM_ROUTES.Privacy)}
+            glow="rgba(255,184,0,0.50)"
+            loading={loadingKey === "privacy"}
+            onPress={() => go("privacy", SM_ROUTES.Privacy)}
           />
         </View>
 
@@ -121,16 +135,6 @@ export default function SMHomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { padding: spacing.lg, paddingTop: spacing.xxl, flexGrow: 1 },
   brand: { color: colors.muted, fontWeight: "900", letterSpacing: 2.5 },
-  title: {
-    color: colors.text,
-    fontSize: 26,
-    fontWeight: "900",
-    marginTop: spacing.sm,
-  },
-  sub: {
-    color: colors.muted,
-    marginTop: spacing.xs,
-    marginBottom: spacing.lg,
-    lineHeight: 18,
-  },
+  title: { color: colors.text, fontSize: 26, fontWeight: "900", marginTop: spacing.sm },
+  sub: { color: colors.muted, marginTop: spacing.xs, marginBottom: spacing.lg, lineHeight: 18 },
 });

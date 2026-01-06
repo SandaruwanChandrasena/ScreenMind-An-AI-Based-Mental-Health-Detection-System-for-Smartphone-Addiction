@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, Text, View, StyleSheet } from "react-native";
+import { Pressable, Text, View, StyleSheet, ActivityIndicator } from "react-native";
 import { colors } from "../../../theme/colors";
 import { spacing } from "../../../theme/spacing";
 
@@ -8,24 +8,30 @@ export default function SMActionCard({
   emoji = "➡️",
   onPress,
   glow = "rgba(124,58,237,0.65)",
+  loading = false,
 }) {
   return (
     <Pressable
       onPress={onPress}
+      disabled={loading}
       style={({ pressed }) => [
         styles.card,
         { borderColor: glow, shadowColor: glow },
-        pressed && styles.pressed,
+        pressed && !loading && styles.pressed,
+        loading && { opacity: 0.92 },
       ]}
     >
-      {/* Left accent line */}
       <View style={[styles.accent, { backgroundColor: glow }]} />
 
       <Text style={styles.title} numberOfLines={1}>
         {title}
       </Text>
 
-      <Text style={styles.emoji}>{emoji}</Text>
+      {loading ? (
+        <ActivityIndicator size="small" color={glow} />
+      ) : (
+        <Text style={styles.emoji}>{emoji}</Text>
+      )}
     </Pressable>
   );
 }
@@ -37,21 +43,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     borderRadius: 16,
 
-    /**
-     * ✅ IMPORTANT FIX:
-     * Use a more OPAQUE background so the DashboardBackground
-     * shapes cannot show through (removes that black band).
-     */
-    backgroundColor: "rgba(18,26,51,0.92)", // solid premium dark
-
+    backgroundColor: "rgba(18,26,51,0.92)",
     borderWidth: 1.6,
     overflow: "hidden",
 
-    // Glow
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
+    // ✅ Softer glow (less neon)
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
+    elevation: 2,
 
     flexDirection: "row",
     alignItems: "center",

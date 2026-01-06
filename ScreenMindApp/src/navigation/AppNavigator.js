@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { View, ActivityIndicator, TouchableOpacity } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -27,6 +27,18 @@ import { colors } from "../theme/colors";
 const Stack = createStackNavigator();
 const SocialMediaStack = createStackNavigator();
 
+// ✅ Dark theme to prevent "white flash"
+const NavTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: colors.bg1,
+    card: colors.bg1,
+    text: colors.text,
+    border: colors.border,
+  },
+};
+
 // ✅ Nested stack for Component 04 screens
 function SocialMediaNavigator() {
   return (
@@ -36,6 +48,7 @@ function SocialMediaNavigator() {
         headerTintColor: colors.text,
         headerTitleStyle: { fontWeight: "800" },
         headerShadowVisible: false,
+        cardStyle: { backgroundColor: colors.bg1 }, // ✅ prevents flash
       }}
     >
       <SocialMediaStack.Screen
@@ -96,13 +109,14 @@ export default function AppNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={NavTheme}>
       <Stack.Navigator
         screenOptions={{
           headerStyle: { backgroundColor: colors.bg1 },
           headerTintColor: colors.text,
           headerTitleStyle: { fontWeight: "800" },
           headerShadowVisible: false,
+          cardStyle: { backgroundColor: colors.bg1 }, // ✅ prevents flash
         }}
       >
         {user ? (
@@ -124,10 +138,8 @@ export default function AppNavigator() {
               })}
             />
 
-            {/* ✅ User Profile */}
             <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: "Profile" }} />
 
-            {/* ✅ Component 04 stack (ALL Social Media screens inside) */}
             <Stack.Screen
               name="SocialMediaStack"
               component={SocialMediaNavigator}
