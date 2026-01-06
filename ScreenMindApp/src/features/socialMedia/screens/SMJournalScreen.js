@@ -1,22 +1,67 @@
-import React, { useMemo, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TextInput, Alert } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  Pressable,
+  ActivityIndicator,
+} from "react-native";
+
 import DashboardBackground from "../../../components/DashboardBackground";
 import PrimaryButton from "../../../components/PrimaryButton";
-import { colors } from "../../../theme/colors";
-import { spacing } from "../../../theme/spacing";
+
+import SMJournalInputCard from "../components/SMJournalInputCard";
 import SMSectionTitle from "../components/SMSectionTitle";
 import SMMiniCard from "../components/SMMiniCard";
+
+import { colors } from "../../../theme/colors";
+import { spacing } from "../../../theme/spacing";
+
 import { analyzeJournalText } from "../services/socialMedia.api";
 import { toFixedMaybe } from "../utils/sm.formatters";
 
+import {
+  loadJournalEntries,
+  saveJournalEntries,
+  deleteJournalEntry,
+} from "../storage/sm.journal.storage";
+
 export default function SMJournalScreen() {
   const [text, setText] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [selectedMood, setSelectedMood] = useState(null);
 
-  // local UI result (mock default)
+  const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 
-  const canAnalyze = useMemo(() => text.trim().length >= 10, [text]);
+  const [entries, setEntries] = useState([]);
+  const [loadingEntries, setLoadingEntries] = useState(true);
+
+  const trimmed = text.trim();
+  const canAnalyze = useMemo(() => trimmed.length >= 10, [trimmed]);
+  const canSave = useMemo(() => trimmed.length >= 3, [trimmed]);
+
+  // ✅ LOAD SAVED ENTRIES
+  useEffect(() => {
+    let mounted = true;
+
+    async function init() {
+      try {
+        const saved = await loadJournalEntries();
+        if (mounted) setEntries(saved);
+      } catch (e) {
+        console.log("Load entries failed:", e);
+      } finally {
+        if (mounted) setLoadingEntries(false);
+      }
+    }
+
+    init();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const onAnalyze = async () => {
     if (!canAnalyze) {
@@ -26,16 +71,9 @@ export default function SMJournalScreen() {
 
     try {
       setLoading(true);
-
-      // If backend isn't ready yet, you can comment this and set mock result
-      const data = await analyzeJournalText(text.trim());
-
-      // Expected response format (example):
-      // { riskLevel, sentimentScore, sentimentLabel, absolutistCount, emojiMasking }
+      const data = await analyzeJournalText(trimmed);
       setResult(data);
     } catch (e) {
-      Alert.alert("Analysis failed", e?.message || "Backend not connected yet.");
-      // Fallback mock (so UI can still be demonstrated)
       setResult({
         riskLevel: "MODERATE",
         sentimentScore: -0.62,
@@ -48,38 +86,111 @@ export default function SMJournalScreen() {
     }
   };
 
+  // ✅ SAVE + PERSIST
+  const onSave = async () => {
+    if (!canSave) {
+      Alert.alert("Nothing to save", "Write something first.");
+      return;
+    }
+
+    const entry = {
+      id: Date.now().toString(),
+      text: trimmed,
+      mood: selectedMood,
+      createdAt: new Date().toISOString(),
+    };
+
+    const updated = [entry, ...entries];
+
+    setEntries(updated);               // UI update
+    await saveJournalEntries(updated); // PERMANENT SAVE
+
+    Alert.alert("Saved", "Journal entry saved permanently.");
+
+    setText("");
+    setSelectedMood(null);
+  };
+
+  // ✅ DELETE + PERSIST
+  const onDelete = (id) => {
+    Alert.alert("Delete entry?", "This cannot be undone.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            // 1) update storage
+            await deleteJournalEntry(id);
+
+            // 2) update UI
+            setEntries((prev) => prev.filter((e) => e.id !== id));
+          } catch (e) {
+            Alert.alert("Delete failed", e?.message || "Please try again.");
+          }
+        },
+      },
+    ]);
+  };
+
+  const onClear = () => {
+    setText("");
+    setSelectedMood(null);
+    setResult(null);
+  };
+
   return (
     <DashboardBackground>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={styles.brand}>DAILY JOURNAL</Text>
         <Text style={styles.title}>Typing Stress Test</Text>
         <Text style={styles.sub}>
-          Write a short note. We use it for sentiment, absolutist words, and emoji masking.
+          Write a short note. We analyze sentiment and stress indicators.
         </Text>
 
-        <SMSectionTitle title="Journal Input" subtitle="This is user-entered data (ethical and consent-based)." />
+        <SMSectionTitle title="Journal Input" subtitle="Consent-based user input." />
 
-        <View style={styles.inputCard}>
-          <TextInput
-            value={text}
-            onChangeText={setText}
-            placeholder="How was your day today?"
-            placeholderTextColor={colors.faint}
-            multiline
-            style={styles.input}
-            textAlignVertical="top"
-          />
-        </View>
+        <SMJournalInputCard
+          text={text}
+          onChangeText={setText}
+          selectedMood={selectedMood}
+          onSelectMood={setSelectedMood}
+        />
 
-        <View style={{ marginTop: spacing.md }}>
+        <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
           <PrimaryButton
             title={loading ? "Analyzing..." : "Analyze"}
             onPress={onAnalyze}
             disabled={loading || !canAnalyze}
           />
+
+          <View style={styles.actionRow}>
+            <Pressable
+              onPress={onSave}
+              disabled={!canSave}
+              style={({ pressed }) => [
+                styles.secondaryBtn,
+                !canSave && { opacity: 0.5 },
+                pressed && canSave && { opacity: 0.9 },
+              ]}
+            >
+              <Text style={styles.secondaryText}>Save Entry</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={onClear}
+              style={({ pressed }) => [styles.ghostBtn, pressed && { opacity: 0.9 }]}
+            >
+              <Text style={styles.ghostText}>Clear</Text>
+            </Pressable>
+          </View>
         </View>
 
-        <SMSectionTitle title="Result" subtitle="A compact view of extracted signals." />
+        <SMSectionTitle title="Result" subtitle="Extracted signals." />
 
         <View style={{ flexDirection: "row", gap: spacing.md }}>
           <SMMiniCard
@@ -90,28 +201,55 @@ export default function SMJournalScreen() {
           />
           <SMMiniCard
             label="Sentiment"
-            value={result ? `${toFixedMaybe(result.sentimentScore)} (${result.sentimentLabel})` : "—"}
-            sub="Journal text"
+            value={
+              result ? `${toFixedMaybe(result.sentimentScore)} (${result.sentimentLabel})` : "—"
+            }
+            sub="Journal"
             tint="rgba(14,165,233,0.22)"
           />
         </View>
 
-        <View style={{ height: spacing.md }} />
+        <SMSectionTitle
+          title="Saved Entries"
+          subtitle={
+            loadingEntries
+              ? "Loading..."
+              : entries.length
+              ? "Stored permanently on this device."
+              : "No saved entries yet."
+          }
+        />
 
-        <View style={{ flexDirection: "row", gap: spacing.md }}>
-          <SMMiniCard
-            label="Absolutist"
-            value={result?.absolutistCount?.toString?.() || "—"}
-            sub="Words detected"
-            tint="rgba(239,68,68,0.18)"
-          />
-          <SMMiniCard
-            label="Emoji masking"
-            value={result ? (result.emojiMasking ? "Yes" : "No") : "—"}
-            sub="Contradiction"
-            tint="rgba(34,197,94,0.18)"
-          />
-        </View>
+        {loadingEntries ? (
+          <ActivityIndicator />
+        ) : (
+          <View style={{ gap: spacing.sm }}>
+            {entries.map((e) => (
+              <View key={e.id} style={styles.entryCard}>
+                <View style={styles.entryTop}>
+                  <Text style={styles.entryMood}>
+                    {e.mood ? `${e.mood.emoji} ${e.mood.label}` : "—"}
+                  </Text>
+
+                  <Pressable
+                    onPress={() => onDelete(e.id)}
+                    hitSlop={10}
+                    style={({ pressed }) => [
+                      styles.deleteBtn,
+                      pressed && { opacity: 0.85 },
+                    ]}
+                  >
+                    <Text style={styles.deleteText}>Delete</Text>
+                  </Pressable>
+                </View>
+
+                <Text style={styles.entryText} numberOfLines={3}>
+                  {e.text}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         <View style={{ height: spacing.xxl }} />
       </ScrollView>
@@ -123,19 +261,55 @@ const styles = StyleSheet.create({
   container: { padding: spacing.lg, paddingTop: spacing.xxl, flexGrow: 1 },
   brand: { color: colors.muted, fontWeight: "900", letterSpacing: 2.5 },
   title: { color: colors.text, fontSize: 24, fontWeight: "900", marginTop: spacing.sm },
-  sub: { color: colors.muted, marginTop: spacing.xs, marginBottom: spacing.md, lineHeight: 18 },
+  sub: { color: colors.muted, marginTop: spacing.xs, marginBottom: spacing.md },
 
-  inputCard: {
-    backgroundColor: colors.card,
-    borderColor: colors.border,
+  actionRow: { flexDirection: "row", gap: spacing.sm },
+
+  secondaryBtn: {
+    flex: 1,
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.06)",
     borderWidth: 1,
-    borderRadius: 18,
+    borderColor: colors.border,
+  },
+  secondaryText: { color: colors.text, fontWeight: "900" },
+
+  ghostBtn: {
+    width: 90,
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
+  },
+  ghostText: { color: colors.muted, fontWeight: "900" },
+
+  entryCard: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 16,
     padding: spacing.md,
   },
-  input: {
-    minHeight: 140,
-    color: colors.text,
-    fontSize: 15,
-    lineHeight: 20,
+
+  entryTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
+
+  entryMood: { color: colors.text, fontWeight: "900", fontSize: 12 },
+  entryText: { color: colors.muted, marginTop: 8, lineHeight: 18 },
+
+  deleteBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(239,68,68,0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(239,68,68,0.22)",
+  },
+  deleteText: { color: "#EF4444", fontWeight: "900", fontSize: 11 },
 });
