@@ -11,9 +11,71 @@ import SignUpScreen from "../screens/SignUpScreen";
 import DashboardScreen from "../screens/DashboardScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 
+import {
+  SMHomeScreen,
+  SMJournalScreen,
+  SMNotificationAnalysisScreen,
+  SMGhostingScreen,
+  SMInsightsScreen,
+  SMHistoryScreen,
+  SMPrivacyScreen,
+  SM_ROUTES,
+} from "../features/socialMedia";
+
 import { colors } from "../theme/colors";
 
 const Stack = createStackNavigator();
+const SocialMediaStack = createStackNavigator();
+
+// ✅ Nested stack for Component 04 screens
+function SocialMediaNavigator() {
+  return (
+    <SocialMediaStack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.bg1 },
+        headerTintColor: colors.text,
+        headerTitleStyle: { fontWeight: "800" },
+        headerShadowVisible: false,
+      }}
+    >
+      <SocialMediaStack.Screen
+        name={SM_ROUTES.Home}
+        component={SMHomeScreen}
+        options={{ title: "Social Media" }}
+      />
+      <SocialMediaStack.Screen
+        name={SM_ROUTES.Journal}
+        component={SMJournalScreen}
+        options={{ title: "Daily Journal" }}
+      />
+      <SocialMediaStack.Screen
+        name={SM_ROUTES.Notification}
+        component={SMNotificationAnalysisScreen}
+        options={{ title: "Notification Analysis" }}
+      />
+      <SocialMediaStack.Screen
+        name={SM_ROUTES.Ghosting}
+        component={SMGhostingScreen}
+        options={{ title: "Ghosting Detector" }}
+      />
+      <SocialMediaStack.Screen
+        name={SM_ROUTES.Insights}
+        component={SMInsightsScreen}
+        options={{ title: "Insights" }}
+      />
+      <SocialMediaStack.Screen
+        name={SM_ROUTES.History}
+        component={SMHistoryScreen}
+        options={{ title: "History" }}
+      />
+      <SocialMediaStack.Screen
+        name={SM_ROUTES.Privacy}
+        component={SMPrivacyScreen}
+        options={{ title: "Privacy & Ethics" }}
+      />
+    </SocialMediaStack.Navigator>
+  );
+}
 
 export default function AppNavigator() {
   const { user, initializing } = useContext(AuthContext);
@@ -28,7 +90,7 @@ export default function AppNavigator() {
           backgroundColor: colors.bg1,
         }}
       >
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.text} />
       </View>
     );
   }
@@ -39,7 +101,7 @@ export default function AppNavigator() {
         screenOptions={{
           headerStyle: { backgroundColor: colors.bg1 },
           headerTintColor: colors.text,
-          headerTitleStyle: { fontWeight: "900" },
+          headerTitleStyle: { fontWeight: "800" },
           headerShadowVisible: false,
         }}
       >
@@ -62,10 +124,14 @@ export default function AppNavigator() {
               })}
             />
 
+            {/* ✅ User Profile */}
+            <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: "Profile" }} />
+
+            {/* ✅ Component 04 stack (ALL Social Media screens inside) */}
             <Stack.Screen
-              name="Profile"
-              component={ProfileScreen}
-              options={{ title: "Profile" }}
+              name="SocialMediaStack"
+              component={SocialMediaNavigator}
+              options={{ headerShown: false }}
             />
           </>
         ) : (
