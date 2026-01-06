@@ -21,6 +21,11 @@ export default function SMHomeScreen({ navigation }) {
   const [loadingKey, setLoadingKey] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
 
+  const toggleColor = showDetails
+  ? "rgba(123,77,255,0.85)"   // purple when showing details
+  : "rgba(0,224,255,0.85)";  // cyan when showing summary
+
+
   useEffect(() => {
     const unsub = navigation.addListener("blur", () => setLoadingKey(null));
     return unsub;
@@ -81,16 +86,22 @@ export default function SMHomeScreen({ navigation }) {
           </View>
 
           <Pressable
-            onPress={() => setShowDetails((p) => !p)}
-            style={({ pressed }) => [styles.toggleBtn, pressed && { opacity: 0.9 }]}
-            hitSlop={12}
-          >
-            <Icon
-              name={showDetails ? "list-outline" : "pie-chart-outline"}
-              size={20}
-              color={colors.text}
-            />
-          </Pressable>
+  onPress={() => setShowDetails((p) => !p)}
+  style={({ pressed }) => [
+    styles.toggleBtn,
+    { borderColor: toggleColor, shadowColor: toggleColor },
+    pressed && { opacity: 0.9 },
+  ]}
+  hitSlop={12}
+>
+  <Icon
+    name={showDetails ? "list-outline" : "pie-chart-outline"}
+    size={20}
+    color={toggleColor}
+  />
+</Pressable>
+
+
         </View>
 
         {/* ✅ Toggle content (ONLY one view shown) */}
