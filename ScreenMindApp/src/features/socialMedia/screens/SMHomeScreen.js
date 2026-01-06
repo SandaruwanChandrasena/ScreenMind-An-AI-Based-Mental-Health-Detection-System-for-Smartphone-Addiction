@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
-import DashboardBackground from "../../../components/DashboardBackground";
+import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+import Icon from "react-native-vector-icons/Ionicons";
 
+
+
+import DashboardBackground from "../../../components/DashboardBackground";
 import { colors } from "../../../theme/colors";
 import { spacing } from "../../../theme/spacing";
 
+import SMPieSummary from "../components/SMPieSummary";
 import SMActionCard from "../components/SMActionCard";
 import SMRiskBadge from "../components/SMRiskBadge";
 import SMSectionTitle from "../components/SMSectionTitle";
@@ -15,21 +19,17 @@ import { formatMinutes, toFixedMaybe } from "../utils/sm.formatters";
 
 export default function SMHomeScreen({ navigation }) {
   const [loadingKey, setLoadingKey] = useState(null);
+  const [showDetails, setShowDetails] = useState(false);
 
-  // ✅ Clear loading when leaving this screen
   useEffect(() => {
     const unsub = navigation.addListener("blur", () => setLoadingKey(null));
     return unsub;
   }, [navigation]);
 
   const go = (key, route) => {
-  setLoadingKey(key);
-
-  setTimeout(() => {
-    navigation.navigate(route);
-  }, 280); // 👈 smooth, premium delay
-};
-
+    setLoadingKey(key);
+    setTimeout(() => navigation.navigate(route), 280);
+  };
 
   const riskLevel = RISK_LEVELS.MODERATE;
 
@@ -71,12 +71,47 @@ export default function SMHomeScreen({ navigation }) {
 
         <SMRiskBadge level={riskLevel} hint="Mood signal and response patterns show moderate risk today." />
 
-        <SMSectionTitle title="Quick Metrics" subtitle="A compact snapshot of today’s signals." />
-        <SMMetricsGrid metrics={metrics} />
+        {/* ✅ Quick Metrics header + toggle */}
+        <View style={styles.sectionHeader}>
+          <View style={{ flex: 1 }}>
+            <SMSectionTitle
+              title="Quick Metrics"
+              subtitle={showDetails ? "Detailed view" : "Summary view"}
+            />
+          </View>
+
+          <Pressable
+            onPress={() => setShowDetails((p) => !p)}
+            style={({ pressed }) => [styles.toggleBtn, pressed && { opacity: 0.9 }]}
+            hitSlop={12}
+          >
+            <Icon
+              name={showDetails ? "list-outline" : "pie-chart-outline"}
+              size={20}
+              color={colors.text}
+            />
+          </Pressable>
+        </View>
+
+        {/* ✅ Toggle content (ONLY one view shown) */}
+        {showDetails ? (
+          <SMMetricsGrid metrics={metrics} />
+        ) : (
+          <SMPieSummary
+            title="Signal Breakdown"
+            subtitle="Tap the icon to view full metrics"
+            data={[
+              { label: "Sentiment", value: 42, color: "rgba(123,77,255,0.75)" },
+              { label: "Absolutist", value: 18, color: "rgba(0,224,255,0.70)" },
+              { label: "Masking", value: 12, color: "rgba(217,70,239,0.70)" },
+              { label: "Latency", value: 28, color: "rgba(0,221,187,0.70)" },
+            ]}
+          />
+        )}
 
         <SMSectionTitle title="Actions" subtitle="Explore each analysis pillar." />
 
-        <View style={{ gap: spacing.md }}>
+        <View style={{ marginTop: spacing.sm, gap: spacing.md }}>
           <SMActionCard
             title="Daily Journal"
             emoji="📝"
@@ -137,4 +172,20 @@ const styles = StyleSheet.create({
   brand: { color: colors.muted, fontWeight: "900", letterSpacing: 2.5 },
   title: { color: colors.text, fontSize: 26, fontWeight: "900", marginTop: spacing.sm },
   sub: { color: colors.muted, marginTop: spacing.xs, marginBottom: spacing.lg, lineHeight: 18 },
+
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  toggleBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
 });
