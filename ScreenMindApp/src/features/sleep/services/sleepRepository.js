@@ -47,18 +47,32 @@ export async function stopSleepSession({ sessionId, endTime = Date.now() }) {
  */
 export async function getActiveSleepSession(userId = null) {
   const db = await getDB();
+
+  // ✅ If userId is null, do NOT include user_id filter
+  if (userId == null) {
+    const rs = await exec(
+      db,
+      `SELECT * FROM sleep_sessions
+       WHERE end_time IS NULL
+       ORDER BY start_time DESC
+       LIMIT 1;`,
+      []
+    );
+    return rs.rows.length ? rs.rows.item(0) : null;
+  }
+
   const rs = await exec(
     db,
     `SELECT * FROM sleep_sessions
-     WHERE end_time IS NULL AND (? IS NULL OR user_id = ?)
+     WHERE end_time IS NULL AND user_id = ?
      ORDER BY start_time DESC
      LIMIT 1;`,
-    [userId, userId]
+    [userId]
   );
 
-  if (rs.rows.length === 0) return null;
-  return rs.rows.item(0);
+  return rs.rows.length ? rs.rows.item(0) : null;
 }
+
 
 /**
  * Insert screen event: ON/OFF/UNLOCK
@@ -215,16 +229,27 @@ export async function getSessionSummary(sessionId) {
 export async function getLatestCompletedSession(userId = null) {
   const db = await getDB();
 
+  if (userId == null) {
+    const rs = await exec(
+      db,
+      `SELECT * FROM sleep_sessions
+       WHERE end_time IS NOT NULL
+       ORDER BY end_time DESC
+       LIMIT 1;`,
+      []
+    );
+    return rs.rows.length ? rs.rows.item(0) : null;
+  }
+
   const rs = await exec(
     db,
     `SELECT * FROM sleep_sessions
-     WHERE end_time IS NOT NULL
-     AND (? IS NULL OR user_id = ?)
+     WHERE end_time IS NOT NULL AND user_id = ?
      ORDER BY end_time DESC
      LIMIT 1;`,
-    [userId, userId]
+    [userId]
   );
 
-  if (rs.rows.length === 0) return null;
-  return rs.rows.item(0);
+  return rs.rows.length ? rs.rows.item(0) : null;
 }
+

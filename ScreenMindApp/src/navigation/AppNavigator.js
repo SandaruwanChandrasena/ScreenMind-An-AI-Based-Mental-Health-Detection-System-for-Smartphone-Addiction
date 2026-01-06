@@ -88,6 +88,7 @@ export default function AppNavigator() {
               component={SnoringScreen}
               options={{ title: "Snoring" }}
             />
+
           </>
         ) : (
           <>
