@@ -71,8 +71,9 @@ export default function DashboardScreen({ navigation }) {
             title="Isolation"
             subtitle="Mobility & loneliness risk"
             tint="rgba(239,68,68,0.18)"
-            onPress={() => navigation.navigate("IsolationOverview")}   // ✅ EDIT HERE
+            onPress={() => navigation.navigate("IsolationOverview")} // ✅ EDIT HERE
           />
+
 
         </View>
 

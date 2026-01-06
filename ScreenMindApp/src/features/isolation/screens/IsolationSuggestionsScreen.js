@@ -1,57 +1,42 @@
 import React, { useMemo } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+import Icon from "react-native-vector-icons/Ionicons";
 
 import ScreenBackground from "../../../components/ScreenBackground";
-import PrimaryButton from "../../../components/PrimaryButton";
 import { colors } from "../../../theme/colors";
 import { spacing } from "../../../theme/spacing";
+import GlassCard from "../components/GlassCard";
 
-export default function IsolationSuggestionsScreen() {
-  // ✅ DUMMY SUGGESTIONS (EDIT LATER: personalize based on features)
-  const suggestions = useMemo(
-    () => [
-      {
-        title: "Take a short walk",
-        detail: "Try a 10–15 minute walk today to increase mobility and routine variety.",
-      },
-      {
-        title: "Connect with one friend",
-        detail: "Send a message or call one person you trust. Small contact is enough.",
-      },
-      {
-        title: "Reduce night phone use",
-        detail: "Try phone-free time after 12 AM to improve daily rhythm and energy.",
-      },
-      {
-        title: "Spend time in a new place",
-        detail: "Even a campus area change increases environmental diversity (Wi-Fi variety).",
-      },
-    ],
-    []
-  );
+export default function IsolationSuggestionsScreen({ navigation }) {
+  // ✅ EDIT LATER: personalize based on detected features
+  const suggestions = useMemo(() => ([
+    { t: "Take a short walk", d: "Try 10–15 minutes to increase mobility and location variety." },
+    { t: "Connect with one friend", d: "A short message/call helps improve social exposure." },
+    { t: "Reduce phone use after midnight", d: "Improves daily rhythm and energy." },
+    { t: "Spend time in a new place", d: "Environmental diversity (Wi-Fi variety) supports wellbeing." },
+  ]), []);
 
   return (
     <ScreenBackground>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>Suggestions</Text>
-        <Text style={styles.sub}>Preventive nudges (not diagnosis). Small steps matter.</Text>
+        <Text style={styles.sub}>Preventive nudges (not diagnosis).</Text>
 
-        <View style={styles.card}>
-          {suggestions.map((s, idx) => (
-            <View key={s.title} style={[styles.item, idx !== 0 && styles.borderTop]}>
-              <Text style={styles.itemTitle}>✅ {s.title}</Text>
-              <Text style={styles.itemDetail}>{s.detail}</Text>
+        <GlassCard icon="heart-outline" title="Recommended actions" subtitle="Small steps matter" style={{ marginTop: spacing.lg }}>
+          {suggestions.map((s, i) => (
+            <View key={s.t} style={[styles.item, i !== 0 && styles.borderTop]}>
+              <Text style={styles.itemTitle}>✅ {s.t}</Text>
+              <Text style={styles.itemDetail}>{s.d}</Text>
             </View>
           ))}
-        </View>
+        </GlassCard>
 
         <View style={{ height: spacing.lg }} />
 
-        <PrimaryButton title="Mark today as completed" onPress={() => {}} />
-
-        <Text style={styles.note}>
-          Next phase: suggestions will be generated based on the detected high-risk factors.
-        </Text>
+        <Pressable style={styles.bigBtn} onPress={() => navigation.navigate("IsolationPrivacy")}>
+          <Text style={styles.bigBtnText}>Privacy & Data Controls</Text>
+          <Icon name="chevron-forward" size={18} color={colors.text} />
+        </Pressable>
 
         <View style={{ height: spacing.xxl }} />
       </ScrollView>
@@ -64,19 +49,15 @@ const styles = StyleSheet.create({
   title: { color: colors.text, fontSize: 24, fontWeight: "900" },
   sub: { color: colors.muted, marginTop: 8, lineHeight: 18 },
 
-  card: {
-    marginTop: spacing.lg,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 22,
-    padding: spacing.lg,
-  },
-
   item: { paddingVertical: 10 },
   borderTop: { borderTopWidth: 1, borderTopColor: colors.border, marginTop: 10 },
   itemTitle: { color: colors.text, fontWeight: "900", fontSize: 14 },
   itemDetail: { color: colors.faint, marginTop: 6, lineHeight: 18 },
 
-  note: { color: colors.faint, marginTop: spacing.lg, fontSize: 12, lineHeight: 16 },
+  bigBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingVertical: 14, paddingHorizontal: 14, borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: colors.border,
+  },
+  bigBtnText: { color: colors.text, fontWeight: "900" },
 });

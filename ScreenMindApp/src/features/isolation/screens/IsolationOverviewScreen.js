@@ -1,95 +1,182 @@
-import React, { useMemo } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from "react-native";
+import Icon from "react-native-vector-icons/Ionicons";
 
 import ScreenBackground from "../../../components/ScreenBackground";
-import PrimaryButton from "../../../components/PrimaryButton";
 import { colors } from "../../../theme/colors";
 import { spacing } from "../../../theme/spacing";
+import GlassCard from "../components/GlassCard";
+
+// ✅ NEW: storage + scoring + collector
+import { getIsolationPrefs, upsertDailyIsolationRecord } from "../services/isolationStorage";
+import { computeIsolationRisk } from "../services/isolationScoring";
+import { generateDummyFeatures } from "../services/isolationCollector";
+
+// ---------- Helpers ----------
+function formatMinutes(min) {
+  const m = Math.max(0, Math.round(min || 0));
+  const h = Math.floor(m / 60);
+  const r = m % 60;
+  if (h <= 0) return `${r}m`;
+  return `${h}h ${r}m`;
+}
+
+function formatMeters(m) {
+  const meters = Math.max(0, Math.round(m || 0));
+  if (meters >= 1000) return `${(meters / 1000).toFixed(1)} km`;
+  return `${meters} m`;
+}
+
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function buildSummary(features) {
+  // Simple, explainable summary (panel-friendly)
+  const reasons = [];
+
+  if ((features.dailyDistanceMeters ?? 0) < 800) reasons.push("low movement");
+  if ((features.timeAtHomePct ?? 0) > 75) reasons.push("high time at home");
+  if ((features.uniqueContacts ?? 999) <= 2) reasons.push("fewer unique contacts");
+  if ((features.nightUsageMinutes ?? 0) > 90) reasons.push("high night usage");
+  if ((features.bluetoothAvgDevices ?? 999) <= 2) reasons.push("low nearby-device exposure");
+
+  if (!reasons.length) return "Your recent patterns look balanced. Keep maintaining healthy social exposure.";
+
+  // Keep it short like your mock UI
+  return `${reasons.slice(0, 2).join(" + ")} detected over the last 7 days.`;
+}
+
+// ---------------------------------------------------------
 
 export default function IsolationOverviewScreen({ navigation }) {
-  // ✅ DUMMY DATA (EDIT LATER)
-  const data = useMemo(
-    () => ({
-      riskLevel: "Moderate", // Low | Moderate | High  ✅ EDIT LATER
-      riskScore: 62, // 0-100 ✅ EDIT LATER
-      summary:
-        "Reduced movement + fewer unique contacts detected over the last 7 days.", // ✅ EDIT LATER
-      lastUpdated: "Today, 10:25 AM", // ✅ EDIT LATER
-      highlights: [
-        { label: "Time at home", value: "82%" },
-        { label: "Unique contacts", value: "2" },
-        { label: "Night usage", value: "1h 45m" },
-        { label: "WiFi diversity", value: "Low" },
-      ],
-    }),
-    []
-  );
+  const [loading, setLoading] = useState(true);
+  const [prefs, setPrefs] = useState(null);
+  const [features, setFeatures] = useState(null);
+  const [risk, setRisk] = useState({ score: 0, label: "Low", breakdown: {} });
 
-  const riskTone = getRiskTone(data.riskLevel);
+  useEffect(() => {
+    (async () => {
+      try {
+        // 1) Load consent toggles
+        const p = await getIsolationPrefs();
+        setPrefs(p);
+
+        // 2) Collect features (dummy for now)
+        // ✅ EDIT LATER (IMPORTANT): Replace this with real sensor feature extraction
+        const f = generateDummyFeatures();
+
+        // 3) Compute risk score
+        const r = computeIsolationRisk(f, p);
+
+        // 4) Save today record (used by Stats/Trends screens)
+        const record = {
+          date: todayISO(),
+          features: f,
+          riskScore: r.score,
+          riskLabel: r.label,
+          breakdown: r.breakdown,
+        };
+        await upsertDailyIsolationRecord(record);
+
+        // 5) Update UI state
+        setFeatures(f);
+        setRisk(r);
+      } catch (e) {
+        console.log("IsolationOverview init error:", e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  // Build highlight cards based on features + prefs
+  const highlights = useMemo(() => {
+    if (!features || !prefs) return [];
+
+    const list = [];
+
+    if (prefs.gps) {
+      list.push({ label: "Daily distance", value: formatMeters(features.dailyDistanceMeters) });
+      list.push({ label: "Time at home", value: `${Math.round(features.timeAtHomePct || 0)}%` });
+    }
+
+    if (prefs.calls) {
+      list.push({ label: "Unique contacts", value: `${Math.round(features.uniqueContacts || 0)}` });
+    }
+
+    if (prefs.usage) {
+      list.push({ label: "Night usage", value: formatMinutes(features.nightUsageMinutes) });
+    }
+
+    if (prefs.wifi) {
+      // You store wifiDiversity as entropy number → show Low/Medium/High
+      const w = features.wifiDiversity ?? 0;
+      const wifiLabel = w < 0.4 ? "Low" : w < 0.9 ? "Medium" : "High";
+      list.push({ label: "WiFi diversity", value: wifiLabel });
+    } else {
+      // show "WiFi diversity" even if disabled (optional)
+      list.push({ label: "WiFi diversity", value: "Off" });
+    }
+
+    // Ensure grid looks nice (4 cards)
+    return list.slice(0, 4);
+  }, [features, prefs]);
+
+  const summary = useMemo(() => {
+    if (!features) return "";
+    return buildSummary(features);
+  }, [features]);
+
+  if (loading) {
+    return (
+      <ScreenBackground>
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="large" />
+          <Text style={styles.loadingText}>Loading social well-being…</Text>
+        </View>
+      </ScreenBackground>
+    );
+  }
 
   return (
     <ScreenBackground>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>📍 Isolation & Loneliness</Text>
-        <Text style={styles.sub}>Your social well-being snapshot (privacy-safe).</Text>
+        <Text style={styles.title}>📍 Social Well-being</Text>
+        <Text style={styles.sub}>Loneliness risk based on mobility + communication + behaviour.</Text>
 
-        {/* Risk Card */}
-        <View style={styles.card}>
-          <View style={styles.rowBetween}>
-            <Text style={styles.cardTitle}>Current Risk</Text>
-            <View style={[styles.pill, { backgroundColor: riskTone.bg }]}>
-              <Text style={[styles.pillText, { color: riskTone.text }]}>{data.riskLevel}</Text>
-            </View>
-          </View>
-
-          <Text style={styles.score}>{data.riskScore}/100</Text>
-          <Text style={styles.hint}>{data.summary}</Text>
-
-          <Text style={styles.updated}>Last updated: {data.lastUpdated}</Text>
+        <GlassCard
+          icon="alert-circle-outline"
+          title={`Risk: ${risk.label}`}
+          subtitle={`${risk.score}/100 • Last 7 days`}
+          style={{ marginTop: spacing.lg }}
+        >
+          <Text style={styles.body}>{summary}</Text>
 
           <View style={{ height: spacing.md }} />
 
-          <PrimaryButton
-            title="View Why This Risk"
-            onPress={() => navigation.navigate("IsolationTrends")}
-          />
+          <Pressable style={styles.bigBtn} onPress={() => navigation.navigate("IsolationStats")}>
+            <Text style={styles.bigBtnText}>Open Stats</Text>
+            <Icon name="chevron-forward" size={18} color={colors.text} />
+          </Pressable>
 
           <View style={{ height: spacing.sm }} />
 
-          <PrimaryButton
-            title="View Insights"
-            onPress={() => navigation.navigate("IsolationInsights")}
-            style={{ backgroundColor: colors.primary2 }}
-          />
-        </View>
+          <Pressable style={styles.bigBtn} onPress={() => navigation.navigate("IsolationWhy")}>
+            <Text style={styles.bigBtnText}>Why this risk?</Text>
+            <Icon name="chevron-forward" size={18} color={colors.text} />
+          </Pressable>
+        </GlassCard>
 
-        {/* Quick highlights */}
-        <Text style={styles.sectionTitle}>Quick Highlights</Text>
+        <Text style={styles.sectionTitle}>Quick highlights</Text>
+
         <View style={styles.grid}>
-          {data.highlights.map((x) => (
+          {highlights.map((x) => (
             <View key={x.label} style={styles.statCard}>
               <Text style={styles.statLabel}>{x.label}</Text>
               <Text style={styles.statValue}>{x.value}</Text>
             </View>
           ))}
-        </View>
-
-        <View style={{ height: spacing.lg }} />
-
-        <View style={styles.actionsRow}>
-          <Pressable
-            style={({ pressed }) => [styles.linkBtn, pressed && { opacity: 0.85 }]}
-            onPress={() => navigation.navigate("IsolationTrends")}
-          >
-            <Text style={styles.linkText}>📈 Stats</Text>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [styles.linkBtn, pressed && { opacity: 0.85 }]}
-            onPress={() => navigation.navigate("IsolationSuggestions")}
-          >
-            <Text style={styles.linkText}>🧠 Suggestions</Text>
-          </Pressable>
         </View>
 
         <View style={{ height: spacing.xxl }} />
@@ -98,41 +185,25 @@ export default function IsolationOverviewScreen({ navigation }) {
   );
 }
 
-function getRiskTone(level) {
-  const l = (level || "").toLowerCase();
-  if (l.includes("high")) return { bg: "rgba(239,68,68,0.22)", text: "#FCA5A5" };
-  if (l.includes("moderate")) return { bg: "rgba(245,158,11,0.20)", text: "#FCD34D" };
-  return { bg: "rgba(34,197,94,0.18)", text: "#86EFAC" };
-}
-
 const styles = StyleSheet.create({
   container: { padding: spacing.lg, paddingTop: spacing.xl, flexGrow: 1 },
   title: { color: colors.text, fontSize: 26, fontWeight: "900" },
   sub: { color: colors.muted, marginTop: 6, lineHeight: 18 },
 
-  card: {
-    marginTop: spacing.lg,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 22,
-    padding: spacing.lg,
-  },
-  rowBetween: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  cardTitle: { color: colors.muted, fontWeight: "800", fontSize: 13 },
+  body: { color: colors.faint, lineHeight: 18 },
 
-  pill: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
+  bigBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.06)",
     borderWidth: 1,
     borderColor: colors.border,
   },
-  pillText: { fontWeight: "900", fontSize: 12 },
-
-  score: { color: colors.text, fontSize: 34, fontWeight: "900", marginTop: 10 },
-  hint: { color: colors.faint, marginTop: 8, lineHeight: 18 },
-  updated: { color: colors.faint, marginTop: 12, fontSize: 12 },
+  bigBtnText: { color: colors.text, fontWeight: "900" },
 
   sectionTitle: { color: colors.text, fontWeight: "900", marginTop: spacing.lg, fontSize: 16 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md, marginTop: spacing.md },
@@ -147,16 +218,6 @@ const styles = StyleSheet.create({
   statLabel: { color: colors.muted, fontWeight: "800", fontSize: 12 },
   statValue: { color: colors.text, fontWeight: "900", fontSize: 18, marginTop: 6 },
 
-  actionsRow: { flexDirection: "row", gap: spacing.md },
-  linkBtn: {
-    flex: 1,
-    borderRadius: 16,
-    paddingVertical: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.06)",
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  linkText: { color: colors.text, fontWeight: "900" },
+  loadingWrap: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.lg },
+  loadingText: { marginTop: spacing.md, color: colors.muted, fontWeight: "700" },
 });
