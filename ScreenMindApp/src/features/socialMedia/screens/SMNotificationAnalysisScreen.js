@@ -7,8 +7,16 @@ import SMSectionTitle from "../components/SMSectionTitle";
 import SMMiniCard from "../components/SMMiniCard";
 
 export default function SMNotificationAnalysisScreen() {
-  // ✅ UI-only setting for now (later: connect to permission + backend listener)
+  // ✅ Master toggle (show/hide advanced settings)
   const [notifAccessEnabled, setNotifAccessEnabled] = useState(false);
+
+  // ✅ Advanced settings (only relevant when master ON)
+  const [monitorWhatsApp, setMonitorWhatsApp] = useState(true);
+  const [monitorMessenger, setMonitorMessenger] = useState(false);
+  const [monitorInstagram, setMonitorInstagram] = useState(false);
+
+  const [alertHighRisk, setAlertHighRisk] = useState(true);
+  const [dailyJournalReminder, setDailyJournalReminder] = useState(false);
 
   // dummy placeholders (later replace from backend)
   const overallTone = "Mixed";
@@ -36,19 +44,27 @@ export default function SMNotificationAnalysisScreen() {
 
   const statusUI = useMemo(() => {
     return notifAccessEnabled
-      ? {
-          label: "ON",
-          bg: "rgba(34,197,94,0.16)",
-          text: "#22C55E",
-          hint: "Notification analysis is enabled.",
-        }
-      : {
-          label: "OFF",
-          bg: "rgba(239,68,68,0.14)",
-          text: "#EF4444",
-          hint: "Enable to allow reading notifications for analysis.",
-        };
+      ? { label: "ON", bg: "rgba(34,197,94,0.16)", text: "#22C55E" }
+      : { label: "OFF", bg: "rgba(239,68,68,0.14)", text: "#EF4444" };
   }, [notifAccessEnabled]);
+
+  const SettingRow = ({ title, subtitle, value, onChange }) => {
+    return (
+      <View style={styles.settingRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.settingTitle}>{title}</Text>
+          {!!subtitle && <Text style={styles.settingSub}>{subtitle}</Text>}
+        </View>
+
+        <Switch
+          value={value}
+          onValueChange={onChange}
+          trackColor={{ false: "rgba(255,255,255,0.14)", true: "rgba(34,197,94,0.35)" }}
+          thumbColor={value ? "#22C55E" : "#9CA3AF"}
+        />
+      </View>
+    );
+  };
 
   return (
     <DashboardBackground>
@@ -93,36 +109,48 @@ export default function SMNotificationAnalysisScreen() {
           <View style={{ height: spacing.md }} />
 
           <View style={styles.row}>
-            <SMMiniCard label="Absolutist" value="2" sub="Markers seen" tint="rgba(124,58,237,0.26)" />
-            <SMMiniCard label="Masking" value="No" sub="Emoji conflict" tint="rgba(14,165,233,0.24)" />
+            <SMMiniCard
+              label="Absolutist"
+              value="2"
+              sub="Markers seen"
+              tint="rgba(124,58,237,0.26)"
+            />
+            <SMMiniCard
+              label="Masking"
+              value="No"
+              sub="Emoji conflict"
+              tint="rgba(14,165,233,0.24)"
+            />
           </View>
         </View>
 
+        {/* ✅ Ethics Note (keep visible until master toggle) */}
         <SMSectionTitle
           title="Ethics Note"
           subtitle="Only derived scores should be stored (sentiment score, counts), not message content."
         />
 
-        {/* ✅ New: Settings section */}
-        <View style={styles.settingsCard}>
-          <View style={styles.settingsTop}>
+        <View style={styles.ethicsCard}>
+          <Text style={styles.ethicsText}>
+            • No raw notifications are stored.{"\n"}
+            • Sender names should be anonymized.{"\n"}
+            • Store only numerical signals and timestamps.
+          </Text>
+
+          <View style={styles.divider} />
+
+          {/* ✅ Master toggle row */}
+          <View style={styles.masterRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.settingsTitle}>Notification Access</Text>
-              <Text style={styles.settingsSub}>
-                Allow ScreenMind to analyze social notifications using derived signals only.
+              <Text style={styles.masterTitle}>Enable notification analysis</Text>
+              <Text style={styles.masterSub}>
+                Turn on to monitor selected apps and allow risk alerts.
               </Text>
             </View>
 
-            {/* Status badge */}
             <View style={[styles.statusBadge, { backgroundColor: statusUI.bg }]}>
               <Text style={[styles.statusText, { color: statusUI.text }]}>{statusUI.label}</Text>
             </View>
-          </View>
-
-          <View style={{ height: spacing.md }} />
-
-          <View style={styles.switchRow}>
-            <Text style={styles.switchLabel}>Enable notification analysis</Text>
 
             <Switch
               value={notifAccessEnabled}
@@ -131,17 +159,60 @@ export default function SMNotificationAnalysisScreen() {
               thumbColor={notifAccessEnabled ? "#22C55E" : "#9CA3AF"}
             />
           </View>
-
-          <Text style={styles.statusHint}>{statusUI.hint}</Text>
-
-          <View style={styles.divider} />
-
-          <Text style={styles.bullets}>
-            • No message content is stored{"\n"}
-            • Sender names should be anonymized{"\n"}
-            • Only counts + timestamps are saved
-          </Text>
         </View>
+
+        {/* ✅ Advanced settings (ONLY if enabled) */}
+        {notifAccessEnabled && (
+          <>
+            <View style={{ height: spacing.md }} />
+
+            <View style={styles.settingsCard}>
+              <Text style={styles.groupTitle}>Control Access</Text>
+              <Text style={styles.groupSub}>Choose which apps to monitor for risk signals.</Text>
+
+              <View style={{ height: spacing.sm }} />
+
+              <SettingRow
+                title="Monitor WhatsApp"
+                subtitle="Analyze notification tone & frequency"
+                value={monitorWhatsApp}
+                onChange={setMonitorWhatsApp}
+              />
+              <SettingRow
+                title="Monitor Messenger"
+                subtitle="Analyze notification tone & frequency"
+                value={monitorMessenger}
+                onChange={setMonitorMessenger}
+              />
+              <SettingRow
+                title="Monitor Instagram"
+                subtitle="Analyze notification tone & frequency"
+                value={monitorInstagram}
+                onChange={setMonitorInstagram}
+              />
+
+              <View style={styles.divider} />
+
+              <Text style={styles.groupTitle}>Push Notifications</Text>
+              <Text style={styles.groupSub}>Personal reminders and safety alerts.</Text>
+
+              <View style={{ height: spacing.sm }} />
+
+              <SettingRow
+                title="Alert me on High Risk"
+                subtitle="Get notified when risk goes above threshold"
+                value={alertHighRisk}
+                onChange={setAlertHighRisk}
+              />
+              <SettingRow
+                title="Daily Journal Reminder"
+                subtitle="Gentle daily prompt to reflect"
+                value={dailyJournalReminder}
+                onChange={setDailyJournalReminder}
+              />
+            </View>
+          </>
+        )}
 
         <View style={{ height: spacing.xxl }} />
       </ScrollView>
@@ -163,7 +234,6 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.lg,
   },
-
   summaryTop: { flexDirection: "row", alignItems: "flex-start" },
   summaryTitle: { color: colors.muted, fontSize: 13, fontWeight: "800" },
   summaryValue: { color: colors.text, fontSize: 22, fontWeight: "900", marginTop: 6 },
@@ -192,32 +262,14 @@ const styles = StyleSheet.create({
 
   row: { flexDirection: "row", gap: spacing.md },
 
-  // ✅ Settings card
-  settingsCard: {
+  ethicsCard: {
     backgroundColor: colors.card,
     borderColor: colors.border,
     borderWidth: 1,
     borderRadius: 18,
     padding: spacing.md,
   },
-  settingsTop: { flexDirection: "row", alignItems: "flex-start" },
-  settingsTitle: { color: colors.text, fontWeight: "900", fontSize: 14 },
-  settingsSub: { color: colors.muted, marginTop: 6, fontSize: 12, lineHeight: 16 },
-
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
-    marginLeft: spacing.md,
-  },
-  statusText: { fontWeight: "900", fontSize: 12, letterSpacing: 0.4 },
-
-  switchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  switchLabel: { color: colors.text, fontWeight: "800", fontSize: 13 },
-
-  statusHint: { color: colors.faint, marginTop: 8, fontSize: 12, lineHeight: 16 },
+  ethicsText: { color: colors.muted, lineHeight: 20 },
 
   divider: {
     height: 1,
@@ -225,5 +277,39 @@ const styles = StyleSheet.create({
     marginVertical: spacing.md,
   },
 
-  bullets: { color: colors.muted, lineHeight: 20 },
+  masterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  masterTitle: { color: colors.text, fontWeight: "900", fontSize: 13 },
+  masterSub: { color: colors.faint, marginTop: 4, fontSize: 12, lineHeight: 16 },
+
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
+  },
+  statusText: { fontWeight: "900", fontSize: 11, letterSpacing: 0.5 },
+
+  settingsCard: {
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: spacing.md,
+  },
+
+  groupTitle: { color: colors.text, fontWeight: "900", fontSize: 14 },
+  groupSub: { color: colors.muted, marginTop: 6, fontSize: 12, lineHeight: 16 },
+
+  settingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+  settingTitle: { color: colors.text, fontWeight: "800", fontSize: 13 },
+  settingSub: { color: colors.faint, marginTop: 4, fontSize: 12, lineHeight: 16 },
 });
