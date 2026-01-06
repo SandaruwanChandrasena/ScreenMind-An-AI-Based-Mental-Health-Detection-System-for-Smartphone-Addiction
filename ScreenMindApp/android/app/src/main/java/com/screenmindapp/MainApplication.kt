@@ -4,8 +4,11 @@ import android.app.Application
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactHost
-import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
 import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
+import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
+
+// ✅ ADD THIS IMPORT (YOU NEED TO EDIT THIS)
+import com.screenmindapp.isolation.UsageStatsPackage
 
 class MainApplication : Application(), ReactApplication {
 
@@ -14,7 +17,11 @@ class MainApplication : Application(), ReactApplication {
       context = applicationContext,
       packageList =
         PackageList(this).packages.apply {
-          // Packages that cannot be autolinked yet can be added manually here, for example:
+
+          // ✅ ADD THIS LINE (YOU NEED TO EDIT THIS)
+          add(UsageStatsPackage())
+
+          // Packages that cannot be autolinked yet can be added manually here
           // add(MyReactNativePackage())
         },
     )
