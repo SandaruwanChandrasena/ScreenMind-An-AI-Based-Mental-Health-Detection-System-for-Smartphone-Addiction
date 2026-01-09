@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   bigBtnText: { color: colors.text, fontWeight: "900" },
 
   sectionTitle: { color: colors.text, fontWeight: "900", marginTop: spacing.lg, fontSize: 16 },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md, marginTop: spacing.md },
+  grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginTop: spacing.md },
   statCard: {
     width: "48%",
     backgroundColor: "rgba(255,255,255,0.06)",
@@ -276,6 +276,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 18,
     padding: spacing.md,
+    marginBottom: spacing.md,
   },
   statLabel: { color: colors.muted, fontWeight: "800", fontSize: 12 },
   statValue: { color: colors.text, fontWeight: "900", fontSize: 18, marginTop: 6 },

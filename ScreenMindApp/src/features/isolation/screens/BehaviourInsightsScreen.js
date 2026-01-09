@@ -12,7 +12,7 @@ export default function BehaviourInsightsScreen() {
     { k: "Night phone usage", v: "1h 45m" },
     { k: "Screen time trend", v: "Increasing" },
     { k: "Social app time / total", v: "38% (optional)" },
-    { k: "Daily rhythm", v: "Irregular" },
+    // { k: "Daily rhythm", v: "Irregular" },
   ]), []);
 
   return (
