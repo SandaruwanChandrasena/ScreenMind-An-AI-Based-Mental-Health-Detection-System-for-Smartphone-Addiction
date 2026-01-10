@@ -7,10 +7,11 @@ import com.facebook.react.ReactHost
 import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
 
-// ✅ ADD THIS IMPORT (YOU NEED TO EDIT THIS)
+// ✅ Manual packages
 import com.screenmindapp.isolation.UsageStatsPackage
 import com.screenmindapp.isolation.ServiceStarterPackage
 import com.screenmindapp.isolation.IsolationMetricsPackage
+import com.screenmindapp.isolation.BehaviourMetricsPackage   // ✅ NEW
 
 class MainApplication : Application(), ReactApplication {
 
@@ -20,10 +21,11 @@ class MainApplication : Application(), ReactApplication {
       packageList =
         PackageList(this).packages.apply {
 
-          // ✅ ADD THIS LINE (YOU NEED TO EDIT THIS)
+          // ✅ Add your manual packages here
           add(UsageStatsPackage())
           add(ServiceStarterPackage())
           add(IsolationMetricsPackage())
+          add(BehaviourMetricsPackage()) // ✅ NEW
 
           // Packages that cannot be autolinked yet can be added manually here
           // add(MyReactNativePackage())
